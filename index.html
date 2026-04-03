@@ -51,26 +51,47 @@
         .filter-tab { background: transparent; border: 1px solid var(--card-border); color: var(--text-muted); padding: 0.5rem 1.5rem; border-radius: 30px; cursor: pointer; transition: all 0.3s; font-weight: 600; }
         .filter-tab.active, .filter-tab:hover { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
 
-        /* --- UPGRADED PROJECT CARDS (Structural Fix) --- */
-        .project-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
-        .project-card {
-            background: var(--surface); border: 1px solid var(--card-border); border-radius: 12px; padding: 1.5rem;
-            display: flex; flex-direction: column; /* This is the magic alignment fix */
-            transition: transform 0.3s, box-shadow 0.3s;
+        /* --- UI VISUAL GROUPING (Sidebar Layout) --- */
+        .grouped-section { display: flex; flex-direction: column; gap: 3rem; }
+        
+        .company-group {
+            display: flex; background: var(--surface); border: 1px solid var(--card-border);
+            border-radius: 12px; overflow: hidden; transition: box-shadow 0.3s;
         }
-        .project-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.4); border-color: var(--accent); }
-        .project-card .client { color: var(--accent); font-size: 0.8rem; font-weight: bold; margin-bottom: 0.5rem; display: block; text-transform: uppercase; letter-spacing: 1px; }
+        .company-group:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.3); border-color: rgba(6, 182, 212, 0.3); }
+
+        .company-sidebar {
+            width: 280px; background: rgba(15, 23, 42, 0.6); padding: 2rem;
+            border-right: 1px solid var(--card-border); display: flex; flex-direction: column;
+            justify-content: center; text-align: center;
+        }
+        .company-sidebar h3 { color: var(--accent); margin: 0 0 0.5rem 0; font-size: 1.4rem; }
+        .company-sidebar .project-count { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+
+        .company-projects {
+            flex: 1; padding: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;
+        }
+
+        /* Inner Project Cards */
+        .project-card {
+            background: rgba(30, 41, 59, 0.4); border: 1px solid var(--card-border); border-radius: 8px; padding: 1.5rem;
+            display: flex; flex-direction: column; transition: transform 0.3s, border-color 0.3s;
+        }
+        .project-card:hover { transform: translateY(-3px); border-color: var(--accent); }
         .project-card h4 { margin: 0 0 0.5rem 0; font-size: 1.2rem; }
-        .project-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; flex-grow: 1; /* Pushes tags to the bottom */ }
-        .tag-container { margin-top: auto; } /* Forces tags to stay at bottom */
+        .project-card p { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem; flex-grow: 1; }
+        .tag-container { margin-top: auto; }
         .tag { background: rgba(6, 182, 212, 0.1); color: var(--accent); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; display: inline-block; margin: 0.2rem 0.2rem 0 0; border: 1px solid rgba(6, 182, 212, 0.2); }
 
-        /* --- UPGRADED CASE STUDIES (Grid Layout Fix) --- */
+        @media (max-width: 800px) {
+            .company-group { flex-direction: column; }
+            .company-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--card-border); padding: 1.5rem; }
+        }
+
+        /* --- S-T-A-R CASE STUDIES (2x2 Grid) --- */
         .star-grid { display: grid; grid-template-columns: 1fr; gap: 2rem; }
         .case-card { background: var(--surface); padding: 2rem; border-radius: 12px; border: 1px solid var(--card-border); }
         .case-card h3 { margin-top: 0; color: #fff; margin-bottom: 1.5rem; font-size: 1.4rem; border-bottom: 1px solid var(--card-border); padding-bottom: 0.5rem; }
-        
-        /* 2x2 Grid for STAR to save space */
         .star-box-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
         .star-box { display: flex; background: rgba(30, 41, 59, 0.4); border-radius: 8px; overflow: hidden; border: 1px solid var(--card-border); height: 100%; }
         .star-letter { background: var(--accent); color: #000; padding: 1rem; font-weight: 800; font-size: 1.1rem; display: flex; align-items: center; justify-content: center; width: 50px; flex-shrink: 0; }
@@ -115,7 +136,7 @@
                 <button class="filter-tab" onclick="filterProjects('Semiconductor')">Semiconductor</button>
                 <button class="filter-tab" onclick="filterProjects('Automotive')">Automotive</button>
             </div>
-            <div class="project-grid" id="projects-container"></div>
+            <div class="grouped-section" id="projects-container"></div>
         </section>
 
         <section id="case-studies">
@@ -125,26 +146,58 @@
     </div>
 
     <script>
-        // --- DATA (Your Excel Data) ---
+        // --- DATA (Matches your Excel file structure perfectly) ---
         const skillsData = [
             { category: "PLCs & Control Systems", skills: [{ name: "Siemens (TIA Portal)", percent: 95 }, { name: "Mitsubishi (GX Works)", percent: 90 }, { name: "Allen Bradley", percent: 85 }] },
             { category: "Motion, Robotics & Vision", skills: [{ name: "TRIO Motion", percent: 92 }, { name: "Epson SCARA", percent: 88 }, { name: "Cognex VisionPro", percent: 85 }] },
             { category: "Software & Comms", skills: [{ name: "IEC 61131-3", percent: 95 }, { name: "C# / .NET", percent: 80 }, { name: "Profinet / EtherCAT", percent: 90 }] }
         ];
 
-        const projectsData = [
-            { title: "Wafer Handling System", client: "HCL Tech | Axcelis", categories: "Semiconductor, Real-World Engineering", desc: "Programming support for high-precision wafer transfer across end stations in ion implantation tools.", tech: ["PMAC", "C#", "Visual Studio"] },
-            { title: "Reel to Reel Vision", client: "Brain Domain | Skyworks", categories: "Semiconductor, Real-World Engineering", desc: "Designed to inspect micro components on reel tapes. Detects dimensions and defects at 300 pcs/min.", tech: ["TRIO Motion", "Panasonic EtherCAT"] },
-            { title: "Batch Control System", client: "XNG Automation | Bosch", categories: "Automotive, Real-World Engineering", desc: "Implemented a batch control system ensuring accurate tracking via SCADA and advanced PLC modules.", tech: ["Siemens S7-1500", "WinCC", "TIA Portal"] },
-            { title: "Melt Spinning Machine", client: "Sunlight Auto | BARC", categories: "Real-World Engineering", desc: "Produced Polypropylene wires. Process involved melting at 250°C in a nitrogen atmosphere.", tech: ["Siemens S7-1214C", "SINAMICS VFD"] }
+        // Notice the new structure here to make grouping automatic!
+        const groupedProjectsData = [
+            {
+                company: "HCL Technologies",
+                clientInfo: "End Client: Axcelis",
+                projects: [
+                    { title: "Wafer Handling System", categories: "Semiconductor, Real-World Engineering", desc: "Programming support for high-precision wafer transfer across end stations in ion implantation tools.", tech: ["PMAC", "C#", "Visual Studio"] },
+                    { title: "Simulation Software", categories: "Semiconductor, Real-World Engineering", desc: "C# application to simulate field I/O and instrument behavior for machine testing.", tech: ["C#", ".NET", "Visual Studio"] },
+                    { title: "Automated Radiation Scanner", categories: "Semiconductor, Real-World Engineering", desc: "Developed a tool to measure and analyze radiation leakage from ion implanter equipment.", tech: ["Galil Motion", "C#"] }
+                ]
+            },
+            {
+                company: "Brain Domain",
+                clientInfo: "End Clients: Skyworks, Bosch",
+                projects: [
+                    { title: "Reel to Reel Vision Inspection", categories: "Semiconductor, Real-World Engineering", desc: "Designed to inspect micro components on reel tapes. Detects dimensions and defects at 300 pcs/min.", tech: ["TRIO Motion", "Panasonic EtherCAT"] },
+                    { title: "Automated Molding Machine", categories: "Automotive, Real-World Engineering", desc: "Automated molding machine with an integrated vision inspection system for automotive components.", tech: ["Mitsubishi FX", "Epson SCARA", "Festo Servo"] }
+                ]
+            },
+            {
+                company: "XNG Automation",
+                clientInfo: "End Clients: Bosch, TVS",
+                projects: [
+                    { title: "Production Line Batch Control", categories: "Automotive, Real-World Engineering", desc: "Implemented a batch control system ensuring accurate tracking via SCADA and advanced PLC modules.", tech: ["Siemens S7-1500", "WinCC Runtime"] },
+                    { title: "Vehicle Line Tracing System", categories: "Automotive", desc: "Automated assembly line tracing system integrating PLC and SCADA to monitor vehicle assembly.", tech: ["Siemens S7-1500", "TIA Portal"] }
+                ]
+            },
+            {
+                company: "Sunlight Automation",
+                clientInfo: "End Client: BARC",
+                projects: [
+                    { title: "Melt Spinning Machine", categories: "Real-World Engineering", desc: "Produced Polypropylene wires. Process involved melting at 250°C in a nitrogen atmosphere.", tech: ["Siemens S7-1214C", "SINAMICS VFD"] },
+                    { title: "RPC Trolley System", categories: "Real-World Engineering", desc: "Transported plates for the Neutrino Observatory (INO), creating a working environment at 12m height.", tech: ["Siemens S7-1214C", "HMI TP1500"] }
+                ]
+            }
         ];
 
         const starData = [
-            { title: "Overcoming Reel-to-Reel Tape Snapping", client: "Brain Domain - Motion Control Lead", S: "A package inspection machine experienced inconsistent tension and slip errors during reel engagement.", T: "Troubleshoot synchronization between winder axis and pulley feed to prevent tape damage.", A: "Analyzed CAM/Follower logic. Retuned the PID loop to accommodate heavy reel inertia and added a ramped torque limit.", R: "Eliminated tape snapping, achieving a 100% successful reel engagement rate." },
-            { title: "Fixing Profinet Comm Failures", client: "XNG Automation - Commissioning Lead", S: "During a high-pressure commissioning, the Siemens S7-1500 failed to communicate with VFD drives.", T: "Identify the bottleneck immediately to meet the FAT deadline.", A: "Performed network audit via TIA Portal. Discovered a Profinet name duplication and EMI from incorrect shielding.", R: "System passed the FAT on schedule. Documented fix in SOP." }
+            { title: "Overcoming Reel-to-Reel Tape Snapping", client: "Brain Domain", S: "A package inspection machine experienced inconsistent tension and slip errors during reel engagement.", T: "Troubleshoot synchronization between winder axis and pulley feed to prevent tape damage.", A: "Analyzed CAM/Follower logic. Retuned the PID loop to accommodate heavy reel inertia and added a ramped torque limit.", R: "Eliminated tape snapping, achieving a 100% successful reel engagement rate." },
+            { title: "Fixing Profinet Comm Failures", client: "XNG Automation", S: "During a high-pressure commissioning, the Siemens S7-1500 failed to communicate with VFD drives.", T: "Identify the bottleneck immediately to meet the FAT deadline.", A: "Performed network audit via TIA Portal. Discovered a Profinet name duplication and EMI from incorrect shielding.", R: "System passed the FAT on schedule. Documented fix in SOP." }
         ];
 
         // --- RENDER LOGIC ---
+        
+        // 1. Render Skills
         const skillsDiv = document.getElementById('skills-container');
         skillsData.forEach(cat => {
             let html = `<div class="skill-category"><h3>${cat.category}</h3>`;
@@ -152,17 +205,38 @@
             skillsDiv.innerHTML += html + `</div>`;
         });
 
+        // 2. Render Grouped Projects
         const projectsDiv = document.getElementById('projects-container');
-        projectsData.forEach((p, i) => {
-            let tags = p.tech.map(t => `<span class="tag">${t}</span>`).join('');
-            projectsDiv.innerHTML += `<div class="project-card" data-category="${p.categories}"><span class="client">${p.client}</span><h4>${p.title}</h4><p>${p.desc}</p><div class="tag-container">${tags}</div></div>`;
+        groupedProjectsData.forEach(group => {
+            let html = `
+                <div class="company-group">
+                    <div class="company-sidebar">
+                        <h3>${group.company}</h3>
+                        <span class="project-count">${group.projects.length} Projects</span><br>
+                        <span style="color:var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">${group.clientInfo}</span>
+                    </div>
+                    <div class="company-projects">
+            `;
+            group.projects.forEach(p => {
+                let tags = p.tech.map(t => `<span class="tag">${t}</span>`).join('');
+                html += `
+                    <div class="project-card" data-category="${p.categories}">
+                        <h4>${p.title}</h4>
+                        <p>${p.desc}</p>
+                        <div class="tag-container">${tags}</div>
+                    </div>
+                `;
+            });
+            html += `</div></div>`;
+            projectsDiv.innerHTML += html;
         });
 
+        // 3. Render STAR Cases
         const starDiv = document.getElementById('star-container');
         starData.forEach(c => {
             starDiv.innerHTML += `
                 <div class="case-card">
-                    <span class="client" style="color:var(--accent); font-weight:bold; font-size:0.8rem; text-transform:uppercase;">${c.client}</span>
+                    <span style="color:var(--accent); font-weight:bold; font-size:0.8rem; text-transform:uppercase;">${c.client}</span>
                     <h3>${c.title}</h3>
                     <div class="star-box-container">
                         <div class="star-box"><div class="star-letter">S</div><div class="star-text">${c.S}</div></div>
@@ -173,14 +247,26 @@
                 </div>`;
         });
 
+        // 4. Filter Logic (Upgraded for Groups)
         function filterProjects(cat) {
+            // Update button styles
             document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
             event.target.classList.add('active');
-            document.querySelectorAll('.project-card').forEach(card => {
-                if (cat === 'All' || card.getAttribute('data-category').includes(cat)) {
-                    card.style.display = 'flex';
-                    card.style.animation = 'none'; card.offsetHeight; card.style.animation = 'fadeIn 0.5s ease-in';
-                } else card.style.display = 'none';
+            
+            // Filter cards and hide empty sidebars
+            document.querySelectorAll('.company-group').forEach(group => {
+                let hasVisibleCards = false;
+                group.querySelectorAll('.project-card').forEach(card => {
+                    if (cat === 'All' || card.getAttribute('data-category').includes(cat)) {
+                        card.style.display = 'flex';
+                        card.style.animation = 'none'; card.offsetHeight; card.style.animation = 'fadeIn 0.5s ease-in';
+                        hasVisibleCards = true;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                // If the company has no visible cards for this filter, hide the whole company group!
+                group.style.display = hasVisibleCards ? 'flex' : 'none';
             });
         }
     </script>
