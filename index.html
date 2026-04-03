@@ -51,31 +51,35 @@
         .filter-tab { background: transparent; border: 1px solid var(--card-border); color: var(--text-muted); padding: 0.5rem 1.5rem; border-radius: 30px; cursor: pointer; transition: all 0.3s; font-weight: 600; }
         .filter-tab.active, .filter-tab:hover { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 0 15px var(--accent-glow); }
 
-        /* --- UI VISUAL GROUPING (Sidebar Layout) --- */
-        .grouped-section { display: flex; flex-direction: column; gap: 3rem; }
-        
-        .company-group {
+        /* --- VERTICAL TABS LAYOUT (Project Gallery Only) --- */
+        .projects-layout {
             display: flex; background: var(--surface); border: 1px solid var(--card-border);
-            border-radius: 12px; overflow: hidden; transition: box-shadow 0.3s;
-        }
-        .company-group:hover { box-shadow: 0 10px 30px rgba(0,0,0,0.3); border-color: rgba(6, 182, 212, 0.3); }
-
-        .company-sidebar {
-            width: 280px; background: rgba(15, 23, 42, 0.6); padding: 2rem;
-            border-right: 1px solid var(--card-border); display: flex; flex-direction: column;
-            justify-content: center; text-align: center;
-        }
-        .company-sidebar h3 { color: var(--accent); margin: 0 0 0.5rem 0; font-size: 1.4rem; }
-        .company-sidebar .project-count { color: var(--text-muted); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
-
-        .company-projects {
-            flex: 1; padding: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;
+            border-radius: 12px; overflow: hidden; min-height: 500px;
         }
 
-        /* Inner Project Cards */
+        .vertical-tabs {
+            width: 280px; background: rgba(15, 23, 42, 0.6); display: flex; flex-direction: column;
+            border-right: 1px solid var(--card-border);
+        }
+        .v-tab {
+            padding: 1.5rem; text-align: left; background: transparent; border: none;
+            border-bottom: 1px solid var(--card-border); border-left: 4px solid transparent;
+            color: var(--text-muted); cursor: pointer; font-size: 1.1rem; font-weight: bold;
+            transition: all 0.3s; outline: none;
+        }
+        .v-tab:hover { background: rgba(6, 182, 212, 0.05); color: var(--text-main); }
+        .v-tab.active { background: rgba(6, 182, 212, 0.1); color: var(--accent); border-left: 4px solid var(--accent); }
+        .v-tab .client-info { display: block; font-size: 0.8rem; font-weight: normal; color: var(--text-muted); margin-top: 0.3rem; }
+        
+        .tab-content {
+            flex: 1; padding: 2rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem; align-content: start;
+        }
+
         .project-card {
             background: rgba(30, 41, 59, 0.4); border: 1px solid var(--card-border); border-radius: 8px; padding: 1.5rem;
             display: flex; flex-direction: column; transition: transform 0.3s, border-color 0.3s;
+            animation: fadeIn 0.4s ease-in;
         }
         .project-card:hover { transform: translateY(-3px); border-color: var(--accent); }
         .project-card h4 { margin: 0 0 0.5rem 0; font-size: 1.2rem; }
@@ -84,8 +88,10 @@
         .tag { background: rgba(6, 182, 212, 0.1); color: var(--accent); padding: 0.3rem 0.6rem; border-radius: 4px; font-size: 0.75rem; display: inline-block; margin: 0.2rem 0.2rem 0 0; border: 1px solid rgba(6, 182, 212, 0.2); }
 
         @media (max-width: 800px) {
-            .company-group { flex-direction: column; }
-            .company-sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--card-border); padding: 1.5rem; }
+            .projects-layout { flex-direction: column; }
+            .vertical-tabs { width: 100%; flex-direction: row; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--card-border); }
+            .v-tab { border-bottom: none; border-right: 1px solid var(--card-border); border-left: none !important; white-space: nowrap; }
+            .v-tab.active { border-bottom: 4px solid var(--accent) !important; }
         }
 
         /* --- S-T-A-R CASE STUDIES (2x2 Grid) --- */
@@ -130,13 +136,17 @@
 
         <section id="projects">
             <h2 class="section-title">Project Gallery</h2>
+            
             <div class="tab-container">
-                <button class="filter-tab active" onclick="filterProjects('All')">All Projects</button>
-                <button class="filter-tab" onclick="filterProjects('Real-World Engineering')">Real-World Engineering</button>
-                <button class="filter-tab" onclick="filterProjects('Semiconductor')">Semiconductor</button>
-                <button class="filter-tab" onclick="filterProjects('Automotive')">Automotive</button>
+                <button class="filter-tab active" onclick="applyGlobalFilter('All Projects', event)">All Projects</button>
+                <button class="filter-tab" onclick="applyGlobalFilter('Real-World Engineering', event)">Real-World Engineering</button>
+                <button class="filter-tab" onclick="applyGlobalFilter('Current Work', event)">Current Work</button>
             </div>
-            <div class="grouped-section" id="projects-container"></div>
+
+            <div class="projects-layout">
+                <div class="vertical-tabs" id="dynamic-tabs"></div>
+                <div class="tab-content" id="projects-content"></div>
+            </div>
         </section>
 
         <section id="case-studies">
@@ -146,48 +156,11 @@
     </div>
 
     <script>
-        // --- DATA (Matches your Excel file structure perfectly) ---
+        // --- 1. DATA (Skills and STAR remain exactly the same) ---
         const skillsData = [
             { category: "PLCs & Control Systems", skills: [{ name: "Siemens (TIA Portal)", percent: 95 }, { name: "Mitsubishi (GX Works)", percent: 90 }, { name: "Allen Bradley", percent: 85 }] },
             { category: "Motion, Robotics & Vision", skills: [{ name: "TRIO Motion", percent: 92 }, { name: "Epson SCARA", percent: 88 }, { name: "Cognex VisionPro", percent: 85 }] },
             { category: "Software & Comms", skills: [{ name: "IEC 61131-3", percent: 95 }, { name: "C# / .NET", percent: 80 }, { name: "Profinet / EtherCAT", percent: 90 }] }
-        ];
-
-        // Notice the new structure here to make grouping automatic!
-        const groupedProjectsData = [
-            {
-                company: "HCL Technologies",
-                clientInfo: "End Client: Axcelis",
-                projects: [
-                    { title: "Wafer Handling System", categories: "Semiconductor, Real-World Engineering", desc: "Programming support for high-precision wafer transfer across end stations in ion implantation tools.", tech: ["PMAC", "C#", "Visual Studio"] },
-                    { title: "Simulation Software", categories: "Semiconductor, Real-World Engineering", desc: "C# application to simulate field I/O and instrument behavior for machine testing.", tech: ["C#", ".NET", "Visual Studio"] },
-                    { title: "Automated Radiation Scanner", categories: "Semiconductor, Real-World Engineering", desc: "Developed a tool to measure and analyze radiation leakage from ion implanter equipment.", tech: ["Galil Motion", "C#"] }
-                ]
-            },
-            {
-                company: "Brain Domain",
-                clientInfo: "End Clients: Skyworks, Bosch",
-                projects: [
-                    { title: "Reel to Reel Vision Inspection", categories: "Semiconductor, Real-World Engineering", desc: "Designed to inspect micro components on reel tapes. Detects dimensions and defects at 300 pcs/min.", tech: ["TRIO Motion", "Panasonic EtherCAT"] },
-                    { title: "Automated Molding Machine", categories: "Automotive, Real-World Engineering", desc: "Automated molding machine with an integrated vision inspection system for automotive components.", tech: ["Mitsubishi FX", "Epson SCARA", "Festo Servo"] }
-                ]
-            },
-            {
-                company: "XNG Automation",
-                clientInfo: "End Clients: Bosch, TVS",
-                projects: [
-                    { title: "Production Line Batch Control", categories: "Automotive, Real-World Engineering", desc: "Implemented a batch control system ensuring accurate tracking via SCADA and advanced PLC modules.", tech: ["Siemens S7-1500", "WinCC Runtime"] },
-                    { title: "Vehicle Line Tracing System", categories: "Automotive", desc: "Automated assembly line tracing system integrating PLC and SCADA to monitor vehicle assembly.", tech: ["Siemens S7-1500", "TIA Portal"] }
-                ]
-            },
-            {
-                company: "Sunlight Automation",
-                clientInfo: "End Client: BARC",
-                projects: [
-                    { title: "Melt Spinning Machine", categories: "Real-World Engineering", desc: "Produced Polypropylene wires. Process involved melting at 250°C in a nitrogen atmosphere.", tech: ["Siemens S7-1214C", "SINAMICS VFD"] },
-                    { title: "RPC Trolley System", categories: "Real-World Engineering", desc: "Transported plates for the Neutrino Observatory (INO), creating a working environment at 12m height.", tech: ["Siemens S7-1214C", "HMI TP1500"] }
-                ]
-            }
         ];
 
         const starData = [
@@ -195,9 +168,28 @@
             { title: "Fixing Profinet Comm Failures", client: "XNG Automation", S: "During a high-pressure commissioning, the Siemens S7-1500 failed to communicate with VFD drives.", T: "Identify the bottleneck immediately to meet the FAT deadline.", A: "Performed network audit via TIA Portal. Discovered a Profinet name duplication and EMI from incorrect shielding.", R: "System passed the FAT on schedule. Documented fix in SOP." }
         ];
 
-        // --- RENDER LOGIC ---
-        
-        // 1. Render Skills
+        // --- UPDATED PROJECT DATA ---
+        const projectsData = [
+            // NEW: Current GitHub AI Project
+            { title: "AI Developer Portfolio", company: "GitHub", domain: "Software & Web Development", client: "Open Source", desc: "Currently exploring AI-assisted web development by building a dynamic, interactive engineering portfolio using Gemini AI and GitHub Pages.", tech: ["HTML", "CSS", "JS", "Python", "Gemini AI"], isCurrent: true },
+
+            // PAST PROJECTS (HCL is no longer 'isCurrent: true')
+            { title: "Wafer Handling System", company: "HCL Technologies", domain: "Semiconductor", client: "Axcelis", desc: "Programming support for high-precision wafer transfer across end stations in ion implantation tools.", tech: ["PMAC", "C#", "Visual Studio"], isCurrent: false },
+            { title: "Simulation Software", company: "HCL Technologies", domain: "Semiconductor", client: "Axcelis", desc: "C# application to simulate field I/O and instrument behavior for machine testing.", tech: ["C#", ".NET", "Visual Studio"], isCurrent: false },
+            { title: "Automated Radiation Scanner", company: "HCL Technologies", domain: "Semiconductor", client: "Axcelis", desc: "Developed a tool to measure and analyze radiation leakage from ion implanter equipment.", tech: ["Galil Motion", "C#"], isCurrent: false },
+            
+            { title: "Reel to Reel Vision Inspection", company: "Brain Domain", domain: "Semiconductor", client: "Skyworks", desc: "Designed to inspect micro components on reel tapes. Detects dimensions and defects at 300 pcs/min.", tech: ["TRIO Motion", "Panasonic EtherCAT"], isCurrent: false },
+            { title: "Automated Molding Machine", company: "Brain Domain", domain: "Automotive", client: "Bosch", desc: "Automated molding machine with an integrated vision inspection system for automotive components.", tech: ["Mitsubishi FX", "Epson SCARA", "Festo Servo"], isCurrent: false },
+            
+            { title: "Production Line Batch Control", company: "XNG Automation", domain: "Automotive", client: "Bosch", desc: "Implemented a batch control system ensuring accurate tracking via SCADA and advanced PLC modules.", tech: ["Siemens S7-1500", "WinCC Runtime"], isCurrent: false },
+            { title: "Vehicle Line Tracing System", company: "XNG Automation", domain: "Automotive", client: "TVS", desc: "Automated assembly line tracing system integrating PLC and SCADA to monitor vehicle assembly.", tech: ["Siemens S7-1500", "TIA Portal"], isCurrent: false },
+            
+            { title: "Melt Spinning Machine", company: "Sunlight Automation", domain: "Industrial / Research", client: "BARC", desc: "Produced Polypropylene wires. Process involved melting at 250°C in a nitrogen atmosphere.", tech: ["Siemens S7-1214C", "SINAMICS VFD"], isCurrent: false },
+            { title: "RPC Trolley System", company: "Sunlight Automation", domain: "Industrial / Research", client: "BARC", desc: "Transported plates for the Neutrino Observatory (INO), creating a working environment at 12m height.", tech: ["Siemens S7-1214C", "HMI TP1500"], isCurrent: false },
+            { title: "Slag Treatment Plant", company: "Sunlight Automation", domain: "Industrial / Research", client: "BARC", desc: "Pneumatic transport and segregation of Magnesium Fluoride (MgF2) powder used as a liner in uranium extraction.", tech: ["Siemens S7-1200", "SINAMICS V20"], isCurrent: false }
+        ];
+
+        // --- 2. RENDER STATIC SECTIONS ---
         const skillsDiv = document.getElementById('skills-container');
         skillsData.forEach(cat => {
             let html = `<div class="skill-category"><h3>${cat.category}</h3>`;
@@ -205,33 +197,6 @@
             skillsDiv.innerHTML += html + `</div>`;
         });
 
-        // 2. Render Grouped Projects
-        const projectsDiv = document.getElementById('projects-container');
-        groupedProjectsData.forEach(group => {
-            let html = `
-                <div class="company-group">
-                    <div class="company-sidebar">
-                        <h3>${group.company}</h3>
-                        <span class="project-count">${group.projects.length} Projects</span><br>
-                        <span style="color:var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">${group.clientInfo}</span>
-                    </div>
-                    <div class="company-projects">
-            `;
-            group.projects.forEach(p => {
-                let tags = p.tech.map(t => `<span class="tag">${t}</span>`).join('');
-                html += `
-                    <div class="project-card" data-category="${p.categories}">
-                        <h4>${p.title}</h4>
-                        <p>${p.desc}</p>
-                        <div class="tag-container">${tags}</div>
-                    </div>
-                `;
-            });
-            html += `</div></div>`;
-            projectsDiv.innerHTML += html;
-        });
-
-        // 3. Render STAR Cases
         const starDiv = document.getElementById('star-container');
         starData.forEach(c => {
             starDiv.innerHTML += `
@@ -247,28 +212,86 @@
                 </div>`;
         });
 
-        // 4. Filter Logic (Upgraded for Groups)
-        function filterProjects(cat) {
-            // Update button styles
-            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+        // --- 3. DYNAMIC PROJECT GALLERY LOGIC ---
+        let activeTopFilter = 'All Projects'; 
+        let activeVerticalTab = ''; 
+
+        function applyGlobalFilter(filterName, event) {
+            activeTopFilter = filterName;
             
-            // Filter cards and hide empty sidebars
-            document.querySelectorAll('.company-group').forEach(group => {
-                let hasVisibleCards = false;
-                group.querySelectorAll('.project-card').forEach(card => {
-                    if (cat === 'All' || card.getAttribute('data-category').includes(cat)) {
-                        card.style.display = 'flex';
-                        card.style.animation = 'none'; card.offsetHeight; card.style.animation = 'fadeIn 0.5s ease-in';
-                        hasVisibleCards = true;
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-                // If the company has no visible cards for this filter, hide the whole company group!
-                group.style.display = hasVisibleCards ? 'flex' : 'none';
+            document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+            if(event) event.target.classList.add('active');
+
+            renderGallery();
+        }
+
+        function renderGallery() {
+            const tabsDiv = document.getElementById('dynamic-tabs');
+            const contentDiv = document.getElementById('projects-content');
+            tabsDiv.innerHTML = '';
+            contentDiv.innerHTML = '';
+
+            let filteredProjects = projectsData;
+            let groupBy = 'company'; 
+
+            // LOGIC UPDATE: Current Work now groups by Domain to match your screenshot!
+            if (activeTopFilter === 'Real-World Engineering') {
+                groupBy = 'domain'; 
+                // Filter out the AI project so it only shows physical engineering here
+                filteredProjects = projectsData.filter(p => !p.isCurrent); 
+            } else if (activeTopFilter === 'Current Work') {
+                filteredProjects = projectsData.filter(p => p.isCurrent);
+                groupBy = 'domain'; // Groups by "Software & Web Development"
+            }
+
+            const groups = {};
+            filteredProjects.forEach(p => {
+                const key = p[groupBy];
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(p);
+            });
+
+            const groupKeys = Object.keys(groups);
+            if (groupKeys.length === 0) return;
+
+            if (!groupKeys.includes(activeVerticalTab)) {
+                activeVerticalTab = groupKeys[0];
+            }
+
+            groupKeys.forEach(key => {
+                const btn = document.createElement('button');
+                const isActive = (key === activeVerticalTab);
+                btn.className = `v-tab ${isActive ? 'active' : ''}`;
+                btn.innerHTML = `${key} <span class="client-info">${groups[key].length} Projects</span>`;
+                
+                btn.onclick = () => {
+                    activeVerticalTab = key;
+                    renderGallery(); 
+                };
+                tabsDiv.appendChild(btn);
+            });
+
+            const activeProjects = groups[activeVerticalTab] || [];
+            activeProjects.forEach(p => {
+                let tags = p.tech.map(t => `<span class="tag">${t}</span>`).join('');
+                
+                // Formats the label exactly like your screenshot: "GITHUB | OPEN SOURCE"
+                let cardLabel = groupBy === 'company' 
+                    ? `${p.domain} | ${p.client}` 
+                    : `${p.company} | ${p.client}`;
+                
+                contentDiv.innerHTML += `
+                    <div class="project-card">
+                        <span style="color:var(--accent); font-size:0.8rem; font-weight:bold; text-transform:uppercase; margin-bottom:0.5rem; display:block;">${cardLabel}</span>
+                        <h4>${p.title}</h4>
+                        <p>${p.desc}</p>
+                        <div class="tag-container">${tags}</div>
+                    </div>
+                `;
             });
         }
+
+        renderGallery();
     </script>
 </body>
 </html>
